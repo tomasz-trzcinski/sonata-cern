@@ -1,0 +1,3 @@
+Nowe punkty dodaje siê w Unity w Assets -> Resources -> DataInput.txt
+Maj¹ formê: 
+	x, wartoœæ(z), y
