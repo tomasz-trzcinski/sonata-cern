@@ -1,19 +1,53 @@
 import numpy as np
 import random
+import tensorflow as tf
 import os
 
-from keras import Sequential, optimizers
+from keras import Sequential, optimizers, Model
 from keras.callbacks import TensorBoard
+from keras.layers import Conv2DTranspose, Dense
+from keras.models import load_model
 from keras.optimizers import RMSprop
-from keras.utils import to_categorical
+from keras.utils import to_categorical, plot_model
 
 import keras.backend as K
-import modelTrans, modelMLP
 
-tensorboard = TensorBoard(log_dir='logs', histogram_freq=0, write_graph=True, write_images=True)
+import modelLSTM
+import modelTrans, modelMLP
+import modelTransPath
+import modelTransPathSmall
+import modelVAE
+import modelVGG
+
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
+save_rate = 200
+
 
 def nsLoss(yTrue, yPred):
     return -K.log(yPred)
+
+
+def increment_statistics():
+    f = open('statistics', 'r+')
+    x = int(f.read())
+    y = x + save_rate
+    f.seek(0)
+    f.truncate()
+    f.write(str(y))
+    f.close()
+
+
+def write_log(callback, names, logs, batch_no):
+    for name, value in zip(names, logs):
+        summary = tf.Summary()
+        summary_value = summary.value.add()
+        summary_value.simple_value = value
+        summary_value.tag = name
+        callback.writer.add_summary(summary, batch_no)
+        callback.writer.flush()
 
 
 def trainFristModel():
@@ -180,29 +214,51 @@ def trainDiscriminator():
 #                 dataPreprocessing.saveImages(images_fake, total_step, i)
 
 
-def train(g, d, batch_size=32, epochs_generator=402, epochs_discriminator=102, total_steps=40):
+def trainTrack(g, d, changeSteps=False, batch_size=32, g_mod=1, d_mod=1, total_steps=40, load=False, noiseSize=100,
+               noiseDist='uniform'):
     import dataPreprocessing
 
-    rms_optimizer = optimizers.rmsprop(lr=0.00007, decay=3e-7)
-    d.compile(loss='binary_crossentropy', optimizer=rms_optimizer, metrics=['accuracy'])
+    log_path = 'logs'
+    callback = TensorBoard(log_path)
+    train_names = ['train_loss', 'train_mae']
+    val_names = ['val_loss', 'val_mae']
+
+    if (load):
+        d = load_model('models/d_small.h5')
+        g = load_model('models/g_small.h5')
+
+    g_out = Conv2DTranspose(1, (3, 10), padding='same')(g.output)
+    d_out = Dense(1, activation='sigmoid')(d.output)
+    d = Model(d.input, d_out)
+    g = Model(g.input, g_out)
+
+    adam_optimizer_d = optimizers.Adam(lr=0.0001)#, decay=4e-8)
+    rms_optimizer = optimizers.rmsprop(lr=0.00007)
+    d.compile(loss='binary_crossentropy', optimizer=adam_optimizer_d, metrics=['accuracy'])
 
     AM = Sequential()
     AM.add(g)
     d.trainable = False
     AM.add(d)
-    rms_optimizerG = optimizers.rmsprop(lr=0.00005, decay=3e-7)
-    # adam_optimizer = optimizers.Adam(lr=0.0001)
-    AM.compile(loss=nsLoss, optimizer=rms_optimizerG, metrics=['accuracy'])
+    callback.set_model(AM)
+    rms_optimizerG = optimizers.rmsprop(lr=0.00002)
+    adam_optimizer_g = optimizers.Adam(lr=0.0002)#, decay=4e-8)
+    AM.compile(loss='binary_crossentropy', optimizer=adam_optimizer_g, metrics=['accuracy'])
 
-    dataset = dataPreprocessing.generateTransTrainSet()
+    dataset = dataPreprocessing.generateTransTrackTrainSet(True)
+
+    genVSdis = 0;
 
     for total_step in range(total_steps):
-        print('Total step nr', total_step)
-        print('Training discriminator')
+        # print('Training discriminator')
         d.trainable = True
-        for i in range(epochs_discriminator):
-            noise = np.random.uniform(-1.0, 1.0, size=[batch_size, 100])
-            images_fake = g.predict(noise)
+        if (noiseDist == 'normal'):
+            noise = np.random.normal(0, 1, size=[batch_size, noiseSize])
+        else:
+            noise = np.random.uniform(0, 1, size=[batch_size, noiseSize])
+        images_fake = g.predict(noise)
+
+        if total_step % d_mod == 0:
             nb_of_real_images = random.randint(1, batch_size)
             realSamples = random.sample(range(dataset.shape[0]), nb_of_real_images)
             realImages = dataset[realSamples,]
@@ -218,23 +274,54 @@ def train(g, d, batch_size=32, epochs_generator=402, epochs_discriminator=102, t
                 newY[index] = y[value]
                 newX[index] = x[value]
 
-            loss = d.train_on_batch(x=newX, y=newY)
-            if (i % 100) == 1:
-                print(i, loss)
+            loss_d = d.train_on_batch(x=newX, y=newY)
 
         d.trainable = False
 
-        print('Training generator')
-        for i in range(epochs_generator):
-            noise = np.random.uniform(-1.0, 1.0, size=[batch_size, 100])
-            images_fake = g.predict(noise)
+        # print('Training generator')
+        if total_step % g_mod == 0:
             y = np.ones([batch_size, 1])
-            loss = AM.train_on_batch(noise, y)
-            if (i % 100) == 1:
-                print(i, loss)
-                dataPreprocessing.saveImages(images_fake, total_step, i)
+            loss_g = AM.train_on_batch(noise, y)
+
+        if changeSteps:
+            if loss_d[1] < 0.5:
+                genVSdis = min(genVSdis + 1, 200)
+            else:
+                genVSdis = max(genVSdis - 1, -200)
+
+            if genVSdis > 100:
+                d_mod = max(1, d_mod - 1)
+            if genVSdis < -100:
+                d_mod = min(d_mod + 1, 100)
+
+        if (total_step % save_rate) == 1:
+            increment_statistics()
+            dataPreprocessing.saveImages(images_fake, total_step, batch_size)
+
+        if (total_step % 100) == 1:
+            # logs = model.train_on_batch(X_train, Y_train)
+            print('Total step nr', total_step)
+            write_log(callback, train_names, loss_g, total_step)
+            print('D', loss_d)
+            print('G', loss_g)
+            print("GvsD", genVSdis, "d_mod", d_mod, "g_mod", g_mod)
+    g.save('models/g_small.h5', overwrite=True)
+    d.save('models/d_small.h5', overwrite=True)
 
 
-train(g=modelTrans.generator(), d=modelTrans.discriminator(), batch_size=32, epochs_generator=1002, epochs_discriminator=102,
-      total_steps=30)
+def plotModel():
+    g = modelMLP.generator()
+    d = modelMLP.discriminator()
+    AM = Sequential()
+    AM.add(g)
+    AM.add(d)
+    AM.summary()
+    plot_model(g, to_file='model_graps/MLPgenerator.png', show_shapes=True)
 
+
+# train(g=modelTrans.generator(), d=modelTrans.discriminator(), d_mod=100, batch_size=32, total_steps=100000)
+# trainTrack(g=modelTransPath.generator(), d=modelTransPath.discriminator(), d_mod=10, batch_size=32, total_steps=100000, load=False)
+# generator= modelVAE.trainVAEForGAN(5)
+# generator.summary()
+trainTrack(g=modelTransPathSmall.generator(), d=modelTransPathSmall.discriminator(), changeSteps=False, d_mod=3, batch_size=128,
+           total_steps=200000, load=False, noiseDist='uniform')
