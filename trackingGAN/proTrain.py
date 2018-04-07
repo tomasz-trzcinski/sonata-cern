@@ -5,7 +5,7 @@ import os
 
 from keras import Sequential, optimizers, Input, Model
 from keras.callbacks import TensorBoard
-from keras.layers import Dense, Conv2D, Reshape, LeakyReLU, Conv2DTranspose, Flatten
+from keras.layers import Dense, Conv2D, Reshape, LeakyReLU, Conv2DTranspose, Flatten, regularizers
 from keras.models import load_model
 from keras.optimizers import RMSprop
 from keras.utils import to_categorical, plot_model
@@ -50,7 +50,7 @@ def write_log(callback, names, logs, batch_no):
         callback.writer.flush()
 
 
-def progressiveTrain(_g, _d, dataset, batch_size=64, g_mod=1, d_mod=1, save_rate=100, total_steps=50000):
+def progressiveTrain(_g, _d, dataset, batch_size=32, g_mod=1, d_mod=1, total_steps=50000, save_nr =0):
     g_out = Conv2DTranspose(1, (3, 10), padding='same')(_g.output)
     d_out = Dense(1, activation='sigmoid')(_d.output)
     d = Model(_d.input, d_out)
@@ -66,7 +66,7 @@ def progressiveTrain(_g, _d, dataset, batch_size=64, g_mod=1, d_mod=1, save_rate
     callback.set_model(AM)
     rms_optimizerG = optimizers.rmsprop(lr=0.0001)
     adam_optimizer_g = optimizers.Adam(lr=0.0002)
-    AM.compile(loss='binary_crossentropy', optimizer=adam_optimizer_g, metrics=['accuracy'])
+    AM.compile(loss=nsLoss, optimizer=adam_optimizer_g, metrics=['accuracy'])
 
     # dataset = dataPreprocessing.generateTransTrackTrainSet(True)
 
@@ -111,6 +111,9 @@ def progressiveTrain(_g, _d, dataset, batch_size=64, g_mod=1, d_mod=1, save_rate
             write_log(callback, train_names, loss_g, total_step)
             print('D', loss_d)
             print('G', loss_g)
+    g.save('models/g_pro_'+str(save_nr)+'.h5', overwrite=True)
+    d.save('models/d_pro_'+str(save_nr)+'.h5', overwrite=True)
+
     return _g, _d
 
 
@@ -127,19 +130,22 @@ def trainTrack(batch_size=32, g_mod=1, d_mod=1, total_steps=40, load=False):
     g_f2 = Dense(image_size, activation='relu')(g_f)
     g_fR = Reshape((159, 3, 1))(g_f2)
 
-    g_c1 = Conv2DTranspose(image_size / 2, (10, 3), padding='same')(g_fR)
+    g_c1 = Conv2DTranspose(40, (20, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(g_fR)
     g_c1A = LeakyReLU()(g_c1)
 
-    g = Model(g_x, g_c1A)
+    g_c2 = Conv2DTranspose(30, (30, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(g_c1A)
+    g_c2A = LeakyReLU()(g_c2)
+
+    g = Model(g_x, g_c2A)
 
     d_x = Input(shape=image_shape)
-    d_c1 = Conv2D(64, (20, 3), padding='same')(d_x)
+    d_c1 = Conv2D(30, (20, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(d_x)
     d_c1A = LeakyReLU()(d_c1)
 
-    d_c2 = Conv2D(64, (15, 3), padding='same')(d_c1A)
+    d_c2 = Conv2D(20, (15, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(d_c1A)
     d_c2A = LeakyReLU()(d_c2)
 
-    d_c3 = Conv2D(64, (10, 3), padding='same')(d_c2A)
+    d_c3 = Conv2D(10, (10, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(d_c2A)
     d_c3A = LeakyReLU()(d_c3)
 
     d_f = Flatten()(d_c3A)
@@ -153,42 +159,41 @@ def trainTrack(batch_size=32, g_mod=1, d_mod=1, total_steps=40, load=False):
     dataset1 = np.floor(dataset * 100) / 100
     g.summary()
     d.summary()
-    g, d = progressiveTrain(g, d, dataset1, d_mod=10, total_steps=100000)
+    g, d = progressiveTrain(g, d, dataset1, d_mod=3, total_steps=100000, save_nr=1)
 
-    g_nc1 = Conv2DTranspose(image_size / 2, (20, 3), padding='same')(g.output)
+    g_nc1 = Conv2DTranspose(70, (20, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(g.output)
     g_nc1A = LeakyReLU()(g_nc1)
-    d_n = Dense(64, activation='relu')(d.output)
+    d_n = Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.01))(d.output)
 
     g = Model(g.input, g_nc1A)
     d = Model(d.input, d_n)
 
     dataset2 = np.floor(dataset * 500) / 500
-    g, d = progressiveTrain(g, d, dataset2, d_mod=10)
+    g, d = progressiveTrain(g, d, dataset2, d_mod=5, save_nr=2)
 
     dataset3 = np.floor(dataset * 1000) / 1000
-    g, d = progressiveTrain(g, d, dataset3, d_mod=5)
+    g, d = progressiveTrain(g, d, dataset3, d_mod=4, save_nr=3)
 
-    g_nc2 = Conv2DTranspose(image_size / 2, (20, 3), padding='same')(g.output)
+    g_nc2 = Conv2DTranspose(40, (20, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(g.output)
     g_nc2A = LeakyReLU()(g_nc2)
-    d_n2 = Dense(64, activation='relu')(d.output)
+    d_n2 = Dense(32, activation='relu', kernel_regularizer=regularizers.l2(0.01))(d.output)
 
     g = Model(g.input, g_nc2A)
     d = Model(d.input, d_n2)
 
     dataset4 = np.floor(dataset * 1500) / 1500
-    g, d = progressiveTrain(g, d, dataset4, d_mod=5)
+    g, d = progressiveTrain(g, d, dataset4, d_mod=5, save_nr=4)
 
-    g_nc3 = Conv2DTranspose(image_size / 2, (20, 3), padding='same')(g.output)
+    g_nc3 = Conv2DTranspose(20, (20, 3), padding='same', kernel_regularizer=regularizers.l2(0.01))(g.output)
     g_nc3A = LeakyReLU()(g_nc3)
-    d_n3 = Dense(64, activation='relu')(d.output)
+    d_n3 = Dense(16, activation='relu', kernel_regularizer=regularizers.l2(0.01))(d.output)
 
     g = Model(g.input, g_nc3A)
     d = Model(d.input, d_n3)
 
-    g, d = progressiveTrain(g, d, dataset, d_mod=4, total_steps=100000)
+    g, d = progressiveTrain(g, d, dataset, d_mod=4, total_steps=100000, save_nr=5)
 
-    g.save('models/g_pro2.h5', overwrite=True)
-    d.save('models/d_pro2.h5', overwrite=True)
+
 
 
 # train(g=modelTrans.generator(), d=modelTrans.discriminator(), d_mod=100, batch_size=32, total_steps=100000)
