@@ -239,7 +239,9 @@
     <Compile Include="Assets\Graph.cs" />
     <Compile Include="Assets\Scripts\Detector toggle.cs" />
     <Compile Include="Assets\Scripts\LaserScript.cs" />
+    <Compile Include="Assets\Scripts\LineScript.cs" />
     <Compile Include="Assets\Scripts\MenuScript.cs" />
+    <Compile Include="Assets\Scripts\ToggleDetectorScript.cs" />
     <Compile Include="Assets\Scripts\VRscript.cs" />
     <Compile Include="Assets\Scripts\VRUI.cs" />
     <Compile Include="Assets\SteamVR\Extras\SteamVR_GazeTracker.cs" />

@@ -7,35 +7,6 @@ using System.IO;
 using System.Text;
 using System.Linq;
 
-[System.Serializable]
-public struct FTrack {
-	public int fUniqueID;
-	public string fType;
-	public int fCharge;
-	public float fE;
-	public int fParentID;
-	public int fPID;
-	public float fSignedPT;
-	public float fMass;
-	public List<float> fMomentum;
-	public List<float> fStartCoordinates;
-	public List<float> fEndCoordinates;
-	public List<float> fChildrenIDs;
-	public float fHelixCurvature;
-	public float fTheta;
-	public float fPhi;
-	public List<float> fPolyX;
-	public List<float> fPolyY;
-	public List<float> fPolyZ;
-
-}
-
-
-[System.Serializable]
-public class TracksList
-{
-	public FTrack[] fTracks;
-}
 
 public class Graph : MonoBehaviour {
 
