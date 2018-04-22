@@ -1,13 +1,14 @@
 import numpy as np
-from keras.layers import Input, Dense, Lambda, Layer, Flatten, Reshape, Conv2DTranspose, Activation, LeakyReLU, Dropout
+from keras.layers import Input, Dense, Lambda, Layer, Flatten, Reshape, Conv2DTranspose, Activation, LeakyReLU, Dropout, \
+    Conv2D
 from keras.models import Model, Sequential, save_model
 from keras import backend as K, objectives, optimizers
 from keras import metrics
 
 import dataPreprocessing
+import os
 
-
-
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 def trainVAE(epochs=100):
     batch_size = 32
     original_dim = 159 * 3
@@ -98,7 +99,7 @@ def trainVAE(epochs=100):
 
 
 def trainVAEForGAN(epochs=50):
-    batch_size = 32
+    batch_size = 64
     original_dim = 159 * 3
     latent_dim = 100
     intermediate_dim = 200
@@ -107,7 +108,12 @@ def trainVAEForGAN(epochs=50):
     # image = (159, 3, 1)
 
     x = Input(shape=(original_dim,))
-    h = Dense(intermediate_dim, activation='relu')(x)
+    x_reshaped = Reshape((159, 3, 1))(x)
+    x_conv = Conv2D(30,(20,3),padding='same')(x_reshaped)
+    x_conv2 = Conv2D(20, (15, 3), padding='same')(x_conv)
+    x_conv3 = Conv2D(10, (20, 3), padding='same')(x_conv2)
+    x_flatten =Flatten()(x_conv3)
+    h = Dense(intermediate_dim, activation='relu')(x_flatten)
     z_mean = Dense(latent_dim)(h)
     z_log_sigma = Dense(latent_dim)(h)
 
@@ -124,8 +130,8 @@ def trainVAEForGAN(epochs=50):
     decoder_mean = Dense(original_dim, activation='sigmoid')
 
     conv1 = Conv2DTranspose(original_dim // 2, (15, 3), padding='same')
-    conv2 = Conv2DTranspose(original_dim // 2, (10, 3), padding='same')
-    conv3 = Conv2DTranspose(original_dim // 2, (15, 3), padding='same')
+    conv2 = Conv2DTranspose(original_dim // 4, (10, 3), padding='same')
+    conv3 = Conv2DTranspose(original_dim // 4, (15, 3), padding='same')
     outConv = Conv2DTranspose(1, 3, padding='same')
 
     #Generator VAE
@@ -148,6 +154,7 @@ def trainVAEForGAN(epochs=50):
 
     # autoencoder
     vae = Model(x, out_reshaped)
+    vae.summary()
 
     #Generator final
     decoder_input = Input(shape=(latent_dim,))
@@ -171,17 +178,17 @@ def trainVAEForGAN(epochs=50):
     generator = Model(decoder_input, _out)
 
 
-    def vae_loss(y_true, y_pred):
+    def vae_loss2(y_true, y_pred):
         """ Calculate loss = reconstruction loss + KL loss for each data in minibatch """
         # E[log P(X|z)]
         recon = original_dim *metrics.mean_squared_error(x, out_reshaped)
         # D_KL(Q(z|X) || P(z|X)); calculate in closed form as both dist. are Gaussian
         kl = 0.5 * K.sum(K.exp(z_log_sigma) + K.square(z_mean) - 1. - z_log_sigma, axis=1)
-        return recon + kl
+        return recon + 0.7*kl
 
     rms_opt = optimizers.rmsprop(lr=0.0001)
-    adam_opt = optimizers.adam(lr=0.002, decay=3e-7)
-    vae.compile(optimizer=adam_opt, loss=vae_loss)
+    adam_opt = optimizers.adam(lr=0.00005, decay=3e-7)
+    vae.compile(optimizer=adam_opt, loss=vae_loss2)
 
     data = dataPreprocessing.generateTransTrackTrainSet(True)
     x_train = np.reshape(data, (data.shape[0], original_dim))
@@ -196,10 +203,11 @@ def trainVAEForGAN(epochs=50):
 
     dataPreprocessing.saveplotTrack(np.reshape(x_train[0], (159, 3)),"vae/original.png")
     dataPreprocessing.saveplotTrack(np.reshape(vae.predict(np.reshape(x_train[0], (1, original_dim))), (159, 3)),"vae/encoded.png")
-    save_model(generator,"models/vae_gen.h5")
-    save_model(vae,"models/vae.h5")
+    save_model(generator,"models/cvae_gen.h5")
+    save_model(vae,"models/cvae.h5")
     # print((x_train[0]-0.5)*500)
     # print((vae.predict(np.reshape(x_train[0], (1, original_dim)))-0.5)*500)
     return generator
 
-# trainVAEForGAN(100)
+
+#trainVAEForGAN(10)

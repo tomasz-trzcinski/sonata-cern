@@ -42,7 +42,7 @@ def d_g_AM(input_size=75):
     d_d2 = Dense(64, activation='relu')(d_concat)
 
     d_d3 = Dense(32, activation='relu')(d_d2)
-    d_out = Dense(1, activation='sigmoid')(d_d3)
+    d_out = Dense(1, activation='linear')(d_d3)
 
     d = Model([d_x, d_i2], d_out)
 

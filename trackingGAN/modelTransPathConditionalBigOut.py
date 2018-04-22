@@ -71,7 +71,7 @@ def d_g_AM(input_size=75):
     g_c4A = LeakyReLU()(g_c4)
     g_c4B = BatchNormalization()(g_c4A)
 
-    g_out = Conv2DTranspose(1, (159, 3), padding='same',name ="g_out")(g_c4B)
+    g_out = Conv2DTranspose(1, (159, 3), padding='same' ,name ="g_out")(g_c4B)
     g = Model(g_x, g_out)
     g.summary()
     d.summary()
