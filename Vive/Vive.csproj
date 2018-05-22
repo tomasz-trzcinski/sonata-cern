@@ -235,12 +235,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\CamScript.cs" />
     <Compile Include="Assets\detectorScript.cs" />
     <Compile Include="Assets\Graph.cs" />
     <Compile Include="Assets\Scripts\Detector toggle.cs" />
     <Compile Include="Assets\Scripts\LaserScript.cs" />
     <Compile Include="Assets\Scripts\LineScript.cs" />
     <Compile Include="Assets\Scripts\MenuScript.cs" />
+    <Compile Include="Assets\Scripts\ToggleBlowupDetectorScript.cs" />
+    <Compile Include="Assets\Scripts\ToggleCollisonScript.cs" />
     <Compile Include="Assets\Scripts\ToggleDetectorScript.cs" />
     <Compile Include="Assets\Scripts\VRscript.cs" />
     <Compile Include="Assets\Scripts\VRUI.cs" />

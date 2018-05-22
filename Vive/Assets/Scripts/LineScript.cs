@@ -88,7 +88,9 @@ public class LineScript : MonoBehaviour
             lineRenderer.widthMultiplier = 0.06f;
 			lineRenderer.numCapVertices = 50;
 			lineRenderer.material = linesMaterial;
+            float pT = Mathf.Sqrt(tracks.fTracks[i].fMomentum[0] * tracks.fTracks[i].fMomentum[0] + tracks.fTracks[i].fMomentum[1] * tracks.fTracks[i].fMomentum[2]);
 			Color color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.9f, 1f);
+            //Color color = new Color();
 			lineRenderer.material.SetColor("_Color", color);
 			lineRenderer.material.SetColor("_EmissionColor", color);
 			lineRenderer.generateLightingData = true;

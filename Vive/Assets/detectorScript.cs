@@ -33,34 +33,44 @@ public class detectorScript : MonoBehaviour
         //}
     }
 
+    public void ToggleSize()
+    {
+            foreach (Transform transform in transformList)
+            {
+                if (transform.childCount < 1)
+                {
+                    if (doublePositions)
+                    {
+                        //if (transform.name == "EMCAL_XEN1_1")
+                        //	transform.position = new Vector3 (5, 5, 5);
+                        //else
+                        //if (transform.position.Equals(vector0))
+                        //	transform.localScale = Vector3.Scale(transform.localScale, new Vector3(2,2,2));
+                        //else
+                        transform.position = Vector3.Scale(transform.position, new Vector3(2, 2, 2));
+                    }
+                    else
+                    {
+                        //if (transform.name == "EMCAL_XEN1_1")
+                        //	transform.position = new Vector3 (0, 0, 0);
+                        //else 
+                        //if (transform.position.Equals (vector0)) 
+                        //transform.localScale = Vector3.Scale(transform.localScale, new Vector3(0.5f,0.5f,0.5f));
+                        //else
+                        transform.position = Vector3.Scale(transform.position, new Vector3(0.5f, 0.5f, 0.5f));
+                    }
+                }
+            }
+            doublePositions = !doublePositions;
+        
+    }
+
     // Update is called once per frame
     void Update()
     {
-		if (Input.GetKeyDown (KeyCode.Space)) {
-			foreach (Transform transform in transformList) {
-				if (transform.childCount < 1) {
-					if (doublePositions) {
-						//if (transform.name == "EMCAL_XEN1_1")
-						//	transform.position = new Vector3 (5, 5, 5);
-						//else
-							if (transform.position.Equals(vector0))
-								transform.localScale = Vector3.Scale(transform.localScale, new Vector3(2,2,2));
-							else
-								transform.position = Vector3.Scale (transform.position, new Vector3 (2, 2, 2));
-					} else {
-						//if (transform.name == "EMCAL_XEN1_1")
-						//	transform.position = new Vector3 (0, 0, 0);
-						//else 
-							if (transform.position.Equals (vector0)) 
-							transform.localScale = Vector3.Scale(transform.localScale, new Vector3(0.5f,0.5f,0.5f));
-						else
-							transform.position = Vector3.Scale (transform.position, new Vector3 (0.5f, 0.5f, 0.5f));
-					}
-				}
-			}
-			doublePositions = !doublePositions;
-		}
-        
+
+        if (Input.GetKeyDown(KeyCode.Space))
+            ToggleSize();
 
         //if (Input.GetKey(KeyCode.LeftArrow))
         //    transform.Rotate(Vector3.up * 50 * Time.deltaTime, Space.World);
