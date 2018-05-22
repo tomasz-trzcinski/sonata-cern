@@ -85,10 +85,13 @@ public class LineScript : MonoBehaviour
         for (int i = 0; i < this.tracks.fTracks.Length; i++)
         {
             LineRenderer lineRenderer = childGameObjects[i].GetComponent<LineRenderer>();
-            lineRenderer.widthMultiplier = 0.01f;
-            lineRenderer.numCornerVertices = 10;
-            Color color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-            lineRenderer.material.color = color;
+            lineRenderer.widthMultiplier = 0.06f;
+			lineRenderer.numCapVertices = 50;
+			lineRenderer.material = linesMaterial;
+			Color color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.9f, 1f);
+			lineRenderer.material.SetColor("_Color", color);
+			lineRenderer.material.SetColor("_EmissionColor", color);
+			lineRenderer.generateLightingData = true;
             List<int> lengthList = new List<int>();
             lengthList.Add(this.tracks.fTracks[i].fPolyX.Count);
             lengthList.Add(this.tracks.fTracks[i].fPolyY.Count);
@@ -103,12 +106,6 @@ public class LineScript : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update () {
-        //LineRenderer lineRenderer = GetComponent<LineRenderer>();
-        //lineRenderer.positionCount = this.tracks.fTracks[track].fPolyX.Count;
-        //for (int i = 0; i < this.tracks.fTracks[track].fPolyX.Count; i++)
-        //{
-        //    lineRenderer.SetPosition(i, new Vector3(this.tracks.fTracks[track].fPolyX[i] / 100, this.tracks.fTracks[track].fPolyY[i] / 100, this.tracks.fTracks[track].fPolyZ[i] / 100));
-        //}
+	void Update () {
     }
 }

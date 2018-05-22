@@ -20,5 +20,10 @@ public class ToggleDetectorScript : MonoBehaviour
         Debug.Log("You have clicked the button!");
     }
 
+	void Update(){
+		if (Input.GetKey (KeyCode.LeftArrow)) {
+
+		}
+	}
 
 }
