@@ -40,22 +40,19 @@
 
 ClassImp(AliAnalysisTaskExampleMCAOD)
 
+//position of primary vertex
 double fV1[3];
 
 
 AliAnalysisTaskExampleMCAOD::AliAnalysisTaskExampleMCAOD() :
-	AliAnalysisTaskSE(), fHistoList(0),  fpidResponse(0), fAODpidUtil(0), out("out.txt")
+	AliAnalysisTaskSE(), fHistoList(0),  fpidResponse(0), fAODpidUtil(0)
 {
-	std::cout.rdbuf(out.rdbuf());
-
 	DefineOutput(1, TList::Class());
 }
 
 AliAnalysisTaskExampleMCAOD::AliAnalysisTaskExampleMCAOD(const Char_t *partName) :
-	AliAnalysisTaskSE(partName), fHistoList(0),  fpidResponse(0), fAODpidUtil(0), out("out.txt")
+	AliAnalysisTaskSE(partName), fHistoList(0),  fpidResponse(0), fAODpidUtil(0)
 {
-	std::cout.rdbuf(out.rdbuf());
-
 	DefineOutput(1, TList::Class());
 }
 
@@ -72,6 +69,7 @@ void AliAnalysisTaskExampleMCAOD::UserCreateOutputObjects()
 	fHistoList = new TList();
 	fHistoList->SetOwner(kTRUE);
 
+	//ttree holding all attributes of observations for classification
 	treeOutput = new TTree("t3", "OutputTree");
 	treeOutput->Branch("TPCNcls", &TPCNcls, "TPCNcls/D");
 	treeOutput->Branch("TPCsignal", &TPCsignal, "TPCsignal/D");
@@ -126,12 +124,10 @@ void AliAnalysisTaskExampleMCAOD::UserCreateOutputObjects()
 	PostData(1, fHistoList);
 }
 
-
-//_____________________________________________________________________
-
-bool AliAnalysisTaskExampleMCAOD::IsPionNSigma(float mom, float nsigmaTPCPi, float nsigmaTOFPi, float TOFtime)
+//traditional method for pion classification
+bool AliAnalysisTaskExampleMCAOD::IsPionNSigma(float mom,
+		float nsigmaTPCPi, float nsigmaTOFPi, float TOFtime)
 {
-
 	if (mom > 0.5) {
 		if (TMath::Hypot( nsigmaTOFPi, nsigmaTPCPi ) < 2)
 			return true;
@@ -144,10 +140,10 @@ bool AliAnalysisTaskExampleMCAOD::IsPionNSigma(float mom, float nsigmaTPCPi, flo
 	return false;
 }
 
-
-bool AliAnalysisTaskExampleMCAOD::IsKaonNSigma(float mom, float nsigmaTPCK, float nsigmaTOFK, float TOFtime)
+//traditional method for kaon classification
+bool AliAnalysisTaskExampleMCAOD::IsKaonNSigma(float mom,
+		float nsigmaTPCK, float nsigmaTOFK, float TOFtime)
 {
-
 	if (mom > 0.5) {
 		if (TMath::Hypot( nsigmaTOFK, nsigmaTPCK ) < 2)
 			return true;
@@ -160,9 +156,10 @@ bool AliAnalysisTaskExampleMCAOD::IsKaonNSigma(float mom, float nsigmaTPCK, floa
 	return false;
 }
 
-bool AliAnalysisTaskExampleMCAOD::IsProtonNSigma(float mom, float nsigmaTPCP, float nsigmaTOFP, float TOFtime)
+//traditional method for proton classification
+bool AliAnalysisTaskExampleMCAOD::IsProtonNSigma(float mom,
+		float nsigmaTPCP, float nsigmaTOFP, float TOFtime)
 {
-
 	if (mom > 0.5) {
 		if (TMath::Hypot( nsigmaTOFP, nsigmaTPCP ) < 2)
 			return true;
@@ -174,8 +171,8 @@ bool AliAnalysisTaskExampleMCAOD::IsProtonNSigma(float mom, float nsigmaTPCP, fl
 
 	return false;
 }
-//_______________________________________________________
 
+//function checking whether track was measured correctly
 bool AliAnalysisTaskExampleMCAOD::isTrackValid(double eta, double pt, bool covxyz)
 {
 	//typical cuts (selection criteria)
@@ -185,18 +182,17 @@ bool AliAnalysisTaskExampleMCAOD::isTrackValid(double eta, double pt, bool covxy
 	if (pt < 0.2 || pt > 20) //transverse momentum
 		return false;
 
-
 	if ( !covxyz )
 		return false;
 
 	return true;
 }
 
-
+//load info about track to designated data structures
+//which are connected to TTree branches for further filling
 void AliAnalysisTaskExampleMCAOD::loadTrackInfo(AliAODTrack* track)
 {
 	float tPt = track->Pt();
-	float tdEdx = track->GetTPCsignal(); //TPC signa,
 	float tTofSig = track->GetTOFsignal(); //TOF signal
 	double pidTime[5]; track->GetIntegratedTimes(pidTime); //TOF times
 	tbeta = tTofSig-pidTime[2];
@@ -204,20 +200,23 @@ void AliAnalysisTaskExampleMCAOD::loadTrackInfo(AliAODTrack* track)
 	double covxyz[21];
 	track->GetCovarianceXYZPxPyPz(covxyz);
 
-	//Number of sigmas (nsigma) method of selecting tracks
+	//Number of sigmas (nsigma) - traditional - method of selecting tracks
 	isPion = (IsPionNSigma(tPt,nSigmaTPCPi, nSigmaTOFPi, tbeta));
 	isKaon = (IsKaonNSigma(tPt,nSigmaTPCK, nSigmaTOFK, tbeta));
 	isProton = (IsProtonNSigma(tPt,nSigmaTPCP, nSigmaTOFP, tbeta));
 
-	double track_ped = sqrt( track->Px() * track->Px() + track->Py() * track->Py() + track->Pz() * track->Pz() );
 
  	TPCNcls = track->GetTPCNcls();
 	TPCsignal = track->GetTPCsignal();
+	//tracks momentum
+	double track_ped = sqrt( track->Px() * track->Px() + track->Py() * track->Py() + track->Pz() * track->Pz() );
 	ped = track_ped;
 	Pt = track->Pt();
 	Px = track->Px();
 	Py = track->Py();
 	Pz = track->Pz();
+
+	//fill the covariance matrix
 	cov0 = covxyz[0];
 	cov1 = covxyz[1];
 	cov2 = covxyz[2];
@@ -239,17 +238,19 @@ void AliAnalysisTaskExampleMCAOD::loadTrackInfo(AliAODTrack* track)
 	cov18 = covxyz[18];
 	cov19 = covxyz[19];
 	cov20 = covxyz[20];
-
 }
 
+//function iterating over every available track to get its info
+//and save it into TTree
 void AliAnalysisTaskExampleMCAOD::UserExec(Option_t *)
 {
+	//prepare environment
 	AliAODInputHandler *aodH = dynamic_cast<AliAODInputHandler *>(
 			AliAnalysisManager::GetAnalysisManager()->GetInputEventHandler());
 	AliAODEvent *fAOD = aodH->GetEvent();
 	fAODpidUtil = aodH->GetAODpidUtil();
 
-	// Get event
+	//get event
 	AliAODEvent* aodEvent = dynamic_cast<AliAODEvent*>(InputEvent());
 	if (!aodEvent) return;
 	AliAODHeader *fAODheader = (AliAODHeader*)aodEvent->GetHeader();
@@ -268,32 +269,36 @@ void AliAnalysisTaskExampleMCAOD::UserExec(Option_t *)
 	Int_t fMinPlpContribMV = 0;
 	Int_t fMinPlpContribSPD = 3;
 
-	if(fMVPlp) anaUtil->SetUseMVPlpSelection(kTRUE);
-	else anaUtil->SetUseMVPlpSelection(kFALSE);
+	if(fMVPlp)
+		anaUtil->SetUseMVPlpSelection(kTRUE);
+	else
+		anaUtil->SetUseMVPlpSelection(kFALSE);
 
-	if(fMinPlpContribMV) anaUtil->SetMinPlpContribMV(fMinPlpContribMV);
-	if(fMinPlpContribSPD) anaUtil->SetMinPlpContribSPD(fMinPlpContribSPD);
+	if(fMinPlpContribMV)
+		anaUtil->SetMinPlpContribMV(fMinPlpContribMV);
+
+	if(fMinPlpContribSPD)
+		anaUtil->SetMinPlpContribSPD(fMinPlpContribSPD);
 
 	if(fisPileUp)
-	if(anaUtil->IsPileUpEvent(aodEvent)) return;
+		if(anaUtil->IsPileUpEvent(aodEvent))
+			return;
 
-	delete anaUtil;	
-
+	delete anaUtil;
 
 	Float_t zvtx = vertex->GetZ();
-	if (TMath::Abs(zvtx) > 10) return;
-
+	if (TMath::Abs(zvtx) > 10)
+		return;
 
  	//getting MC particle array
-	TClonesArray	*arrayMC = dynamic_cast<TClonesArray*>(aodEvent->FindListObject(AliAODMCParticle::StdBranchName()));
-
+	TClonesArray *arrayMC = dynamic_cast<TClonesArray*>(
+			aodEvent->FindListObject(AliAODMCParticle::StdBranchName()));
 
 	//loop over AOD reconstructed tracks
 	for (Int_t iTracks = 0; iTracks < aodEvent->GetNumberOfTracks(); iTracks++) {
 		//get track
-		if(!arrayMC){
+		if(!arrayMC)
 			continue;
-		}
 
 		AliAODTrack *track = (AliAODTrack*)aodEvent->GetTrack(iTracks);
 		if (!track)
@@ -313,24 +318,36 @@ void AliAnalysisTaskExampleMCAOD::UserExec(Option_t *)
 		nSigmaTOFK = -9999;
 		nSigmaTOFP = -9999;
 		nSigmaTOFe = -9999;
-		int statusTOFPi = fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kPion, nSigmaTOFPi);
-		int statusTOFK = fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kKaon, nSigmaTOFK);
-		int statusTOFP = fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kProton, nSigmaTOFP);
-		int statusTOFe = fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kElectron, nSigmaTOFe);
-		if((statusTOFPi != AliPIDResponse::kDetPidOk) || (statusTOFK != AliPIDResponse::kDetPidOk)
-				|| (statusTOFP != AliPIDResponse::kDetPidOk) || (statusTOFe != AliPIDResponse::kDetPidOk))
+		int statusTOFPi =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kPion, nSigmaTOFPi);
+		int statusTOFK =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kKaon, nSigmaTOFK);
+		int statusTOFP =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kProton, nSigmaTOFP);
+		int statusTOFe =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTOF,track,AliPID::kElectron, nSigmaTOFe);
+		if((statusTOFPi != AliPIDResponse::kDetPidOk)
+				|| (statusTOFK != AliPIDResponse::kDetPidOk)
+				|| (statusTOFP != AliPIDResponse::kDetPidOk)
+				|| (statusTOFe != AliPIDResponse::kDetPidOk))
 			continue;
 
 		nSigmaTPCPi = -9999;
 		nSigmaTPCK = -9999;
 		nSigmaTPCP = -9999;
 		nSigmaTPCe = -9999;
-		int statusTPCPi = fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kPion, nSigmaTPCPi);
-		int statusTPCK = fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kKaon, nSigmaTPCK);
-		int statusTPCP = fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kProton, nSigmaTPCP);
-		int statusTPCe = fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kElectron, nSigmaTPCe);
-		if((statusTPCPi != AliPIDResponse::kDetPidOk) || (statusTPCK != AliPIDResponse::kDetPidOk)
-				|| (statusTPCP != AliPIDResponse::kDetPidOk) || (statusTPCe != AliPIDResponse::kDetPidOk))
+		int statusTPCPi =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kPion, nSigmaTPCPi);
+		int statusTPCK =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kKaon, nSigmaTPCK);
+		int statusTPCP =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kProton, nSigmaTPCP);
+		int statusTPCe =
+			fpidResponse->NumberOfSigmas(AliPIDResponse::kTPC,track,AliPID::kElectron, nSigmaTPCe);
+		if((statusTPCPi != AliPIDResponse::kDetPidOk)
+				|| (statusTPCK != AliPIDResponse::kDetPidOk)
+				|| (statusTPCP != AliPIDResponse::kDetPidOk)
+				|| (statusTPCe != AliPIDResponse::kDetPidOk))
 			continue;
 
 		//prepare TTree variables to hold current track data
@@ -342,6 +359,7 @@ void AliAnalysisTaskExampleMCAOD::UserExec(Option_t *)
 		int PDGcode = MCtrk->GetPdgCode();
 		PDGCode = TMath::Abs(PDGcode);
 
+		//save all attributes into TTree
 		treeOutput->Fill();
 	}
 }

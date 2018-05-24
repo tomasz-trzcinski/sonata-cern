@@ -12,13 +12,19 @@
 
 class AliAnalysisUtils;
 
+//main class used for iterating over particle collisions ( events )
+//and saving all data into designated TTree container
 class AliAnalysisTaskExampleMCAOD : public AliAnalysisTaskSE{
 public:
 	AliAnalysisTaskExampleMCAOD();
 	AliAnalysisTaskExampleMCAOD(const Char_t *partName);
 	virtual ~AliAnalysisTaskExampleMCAOD();
-	virtual void UserCreateOutputObjects(); // user create output objects
-	virtual void UserExec(Option_t *option); // user exec
+
+	//prepare output objects
+	virtual void UserCreateOutputObjects();
+
+	//main function used for iterating over collisions
+	virtual void UserExec(Option_t *option);
 
 	//tracks criteria
 	bool isTrackValid(double eta, double pt, bool covxyz);
@@ -26,23 +32,25 @@ public:
 	bool IsPionNSigma(float mom, float nsigmaTPCPi, float nSigmaTOFPi, float TOFtime);
 	bool IsKaonNSigma(float mom, float nsigmaTPCK, float nsigmaTOFK, float TOFtime);
 
+	//load attributes of track to designated variables
 	void loadTrackInfo(AliAODTrack *track);
 
 private:
 	AliAnalysisTaskExampleMCAOD(const AliAnalysisTaskExampleMCAOD &); // copy constructor
 	AliAnalysisTaskExampleMCAOD &operator=(const AliAnalysisTaskExampleMCAOD &); // operator=
 
-	TList *fHistoList; // histo list
+	//output list holding resulting TTree
+	TList *fHistoList;
 
 	//PID objects
 	AliPIDResponse *fpidResponse;
 	AliAODpidUtil	*fAODpidUtil;
 
-	std::ofstream out;
-
+	//container holding all attributes of observations
 	TTree *treeOutput;
 
 	//TTree branches containing tracks attributes
+	//and traditional classification results
 	int PDGCode;
 	double TPCNcls;
 	double TPCsignal;
@@ -86,7 +94,6 @@ private:
 	int isProton;
 
 	ClassDef(AliAnalysisTaskExampleMCAOD, 0);
-
 };
 
 #endif // __ALIANALYSISTASKEXAMPLEMCAOD__

@@ -15,14 +15,17 @@ import sys
 
 
 pd.options.mode.chained_assignment = None
+#list holding allowed tags to call this script with
 allowed_tags = [ '11', '13', '211', '321', '2212', 'isPion', 'isProton', 'isKaon' ]
 
+#cast all particles to 0/1 (choosing only one type)
 def choose_signal(value, signal):
 	if abs(value) == signal:
 		return 1
 	else :
 		return 0
 
+#check if tag is from traditional or ML method
 def isClassifierTag(arg):
 	classifier_args = [ '11', '13', '211', '321', '2212' ]
 	if arg in classifier_args:
@@ -35,29 +38,35 @@ def printUsage():
 	print "Allowed labels:"
 	print allowed_tags
 
+#at least 2 arguments are needed ( file_name and one plot )
 if len(sys.argv) < 3 :
 	printUsage()
 	sys.exit(0)
 
+#check if every tag is valid
 args_list = sys.argv[2:]
 for arg in args_list :
 	if arg not in allowed_tags :
 		printUsage()
 		sys.exit(0)
 
+#load input file with DataFrame to plot
 input_file = sys.argv[1]
 predicted = read_root(input_file)
 
+#lists holding lists of results for calculating efficiency
 scores_list = []
 errors_list = []
 particles_list = []
 threshold_list = []
 
+#prepare empty list for every plot
 for i in xrange(0, len(args_list)):
 	scores_list.append([])
 	errors_list.append([])
 	particles_list.append([])
 
+#map holding particle types responding to different tags
 labels_pid = {
 	'11' : 11,
 	'13' : 13,
@@ -91,12 +100,14 @@ for i in np.logspace(-1, 1, dtype='float64'):
 		else :
 			curr_df['decision'] = curr_df[arg]
 
+		#calculate components of efficiency
 		all_particles = float( len(curr_df[ (curr_df['PIDCode']==1) ]) )
 		all_chosen = float ( len(curr_df[ (curr_df['decision']==1) ]) )
 		all_true = float( len(curr_df[ (curr_df['PIDCode'] == curr_df['decision']) & (curr_df['PIDCode']==1) ]) )
 		err_all = math.sqrt( all_particles )
 		err_true = math.sqrt( all_true )
 
+		#add scores to designated lists
 		#check if any particle was chosen at all
 		if all_chosen == 0:
 			#check if there was any particle to chose from
@@ -113,8 +124,9 @@ for i in np.logspace(-1, 1, dtype='float64'):
 		particles_list[counter].append( all_particles )
 	prev = i
 
-#prepare legend for every plot
+#list holding legend text for every plot
 legends_list = []
+#legends corresponding to every tag
 args_legend = {
 	'11' : u'Las Losowy elektrony ',
 	'13' : u'Las Losowy muony ',
@@ -126,10 +138,12 @@ args_legend = {
 	'isKaon' : u'Tradycyjny PID kaony '
 }
 
+#count overall efficiency and add it to coresponding legend
 for i in xrange(0, len(args_list)) :
 	legend = args_legend[args_list[i]]
 	legend += str( sum(scores_list[i][j] * particles_list[i][j] for j in range(len(scores_list[i])) ) / sum(particles_list[i]) )
 	legends_list.append(legend)
+#add errorbar for every plot
 for i in xrange(0, len(legends_list)):
 	plt.errorbar(threshold_list, scores_list[i], errors_list[i],
 			  label=legends_list[i], fillstyle='none')

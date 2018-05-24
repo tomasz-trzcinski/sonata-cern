@@ -13,6 +13,7 @@ plt.figure()
 plt.rc('text', usetex=True)
 plt.rc('text.latex', unicode=True)
 
+#cast all particles to 0/1 (choosing only one type)
 def choose_signal(value, signal):
 	if abs(value) == signal:
 		return 1
@@ -27,6 +28,7 @@ if len(sys.argv) != 2 :
 #prepare DataFrame file
 predicted = read_root(sys.argv[1])
 
+#list holding all available pids
 pids = [ 11, 13, 211, 321, 2212]
 lw = 2
 
