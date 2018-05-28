@@ -84,7 +84,11 @@ class Classifier:
 		#current best classifier score
 		max_cv = 0.0
 		#map holding parameters of best classifier
-		best_grid = {}
+		best_grid = {
+			'n_estimators' : 1,
+			'max_depth' : None,
+			'max_features' : int(math.sqrt(len(valid_features))) #auto
+		}
 		#for every tunned parameter find best classifier and save it to best_grid
 		#by comparing its oob cross-validatoin score
 		for feature in tuned_features:
@@ -95,7 +99,7 @@ class Classifier:
 	 				max_depth=current_grid['max_depth'],
 					n_jobs=-1, random_state=11, oob_score=True)
 				test_clf.fit(X, y)
-				if ( test_clf.oob_score_ > (max_cv + min_improve)) :
+				if ( test_clf.oob_score_ > (max_cv + self.min_improve)) :
 					self.clf = test_clf
 					max_cv = test_clf.oob_score_
 					best_grid[feature] = current_grid[feature]
