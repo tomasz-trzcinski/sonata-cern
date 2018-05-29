@@ -5,25 +5,32 @@ using UnityEngine;
 public class detectorScript : MonoBehaviour
 {
 	private Transform[] transformList;
-	private int iterator= 0;
+	private List<Vector3> startPositions = new List<Vector3>();
+	private List<Vector3> endPositions = new List<Vector3>();
+	private int speed = 1;
+	private float ITS_displacement = 12f;
 	private Vector3 vector0 = new Vector3(0,0,0); 
 	private Vector3 vector10 = new Vector3(10,10,10); 
 	private bool doublePositions = true;
     // Use this for initialization
 	void Start () {
 		transformList = gameObject.GetComponentsInChildren<Transform> ();
-		Debug.Log (transformList);
-	}
-
-	private void AddElement(Transform transform){
-		if (transform.childCount > 1)
-			foreach (Transform child in transform) {
-				AddElement (child);
+		foreach (Transform transform in transformList) {
+			startPositions.Add (transform.position);
+			if (transform.name.StartsWith ("MAIN_GentleGeometry_ITS")) {
+				endPositions.Add( transform.position + new Vector3(0,0,ITS_displacement));
+				ITS_displacement -= 1.5f ;
+				continue;
 			}
-		else {
-			iterator++;
+			if (transform.name.StartsWith ("MAIN_GentleGeometry_TPC")) {
+				endPositions.Add( transform.position + new Vector3(0,0,2));
+				continue;
+			}
+			endPositions.Add (Vector3.Scale (transform.position, new Vector3 (2, 2, 2)));
+			
 		}
 	}
+
     public void Hidden(bool isHidden)
     {
         //Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
@@ -47,39 +54,75 @@ public class detectorScript : MonoBehaviour
                         //if (transform.position.Equals(vector0))
                         //	transform.localScale = Vector3.Scale(transform.localScale, new Vector3(2,2,2));
                         //else
-                        transform.position = Vector3.Scale(transform.position, new Vector3(2, 2, 2));
+					transform.position = Vector3.MoveTowards(transform.position,Vector3.Scale(transform.position, new Vector3(1, 1, 2)),10);
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_ITS")) {
+						transform.position += new Vector3(0,0,ITS_displacement);
+						ITS_displacement -= 0.5f;
+					}
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_TPC")) {
+						transform.position += new Vector3(0,0,2);
+					}
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_TRD+TOF_BREF_1")) {
+						transform.GetComponentInParent<Renderer>().enabled = false;
+					}
                     }
                     else
                     {
+
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_ITS")) {
+						transform.position -= new Vector3(0,0,ITS_displacement);
+						ITS_displacement -= 0.5f;
+					}
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_TPC")) {
+						transform.position -= new Vector3(0,0,2);
+					}
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_TRD+TOF_BREF_1")) {
+						transform.GetComponentInParent<Renderer>().enabled = false;
+					}
                         //if (transform.name == "EMCAL_XEN1_1")
                         //	transform.position = new Vector3 (0, 0, 0);
                         //else 
                         //if (transform.position.Equals (vector0)) 
                         //transform.localScale = Vector3.Scale(transform.localScale, new Vector3(0.5f,0.5f,0.5f));
                         //else
-                        transform.position = Vector3.Scale(transform.position, new Vector3(0.5f, 0.5f, 0.5f));
+					transform.position =  Vector3.MoveTowards(transform.position,Vector3.Scale(transform.position, new Vector3(1, 1, 0.5f)),speed);
                     }
                 }
             }
-            doublePositions = !doublePositions;
         
     }
 
     // Update is called once per frame
     void Update()
     {
+		
+		if (Input.GetKeyDown (KeyCode.Space))
+			doublePositions = !doublePositions;
+		float step = speed * Time.deltaTime;
+		float ITS_displacement = 5f;
+		int i = 0;
+		foreach (Transform transform in transformList)
+		{
+			if (transform.childCount < 1)
+			{
+				if (!doublePositions)
+				{
+					transform.position = Vector3.MoveTowards(transform.position,endPositions[i],step);
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_TRD+TOF_BREF_1")) {
+						transform.GetComponentInParent<Renderer>().enabled = false;
+					}
 
-        if (Input.GetKeyDown(KeyCode.Space))
-            ToggleSize();
-
-        //if (Input.GetKey(KeyCode.LeftArrow))
-        //    transform.Rotate(Vector3.up * 50 * Time.deltaTime, Space.World);
-        //if (Input.GetKey(KeyCode.RightArrow))
-        //    transform.Rotate(Vector3.down * 50 * Time.deltaTime, Space.World);
-        //if (Input.GetKey(KeyCode.UpArrow))
-        //    transform.position -= transform.forward / 4 + new Vector3(Time.deltaTime, 0, 0);
-        //if (Input.GetKey(KeyCode.DownArrow))
-        //    transform.position += transform.forward / 4 + new Vector3(Time.deltaTime, 0, 0);
+				}
+				else
+				{
+					if (transform.name.StartsWith ("MAIN_GentleGeometry_TRD+TOF_BREF_1")) {
+						transform.GetComponentInParent<Renderer>().enabled = false;
+					}
+					transform.position =  Vector3.MoveTowards(transform.position, startPositions[i],step);
+				}
+			}
+			i++;
+		}
 
     }
 }
