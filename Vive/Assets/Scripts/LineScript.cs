@@ -34,6 +34,21 @@ public class TracksList
     public FTrack[] fTracks;
 }
 
+
+[System.Serializable]
+public class TrackColorList
+{
+    public TrackColor[] colorMapping;
+}
+
+[System.Serializable]
+public class TrackColor
+{
+    public string type;
+    public List<int> color;
+    public List<int> particleIDs;
+}
+
 public class LineScript : MonoBehaviour
 {
 
@@ -41,13 +56,17 @@ public class LineScript : MonoBehaviour
     public int track = 0;
     public Material linesMaterial;
     public TextAsset asset;
+	public Vector3 newPosition;
     string[] pt;
     private GameObject[]  childGameObjects;
     private TracksList tracks;
+    private TrackColorList trackColorList;
     private int points_amount;
     private int max_points;
     float deltaTime;
-
+	private bool doublePositions= false;
+	private int speed = 1;
+	
     public string dataFile = "collision";
     string txtContents;
 
@@ -78,6 +97,8 @@ public class LineScript : MonoBehaviour
             if (tracks.fTracks[i].fPolyX.Count > max_points)
                 max_points = tracks.fTracks[i].fPolyX.Count;
         };
+        txtAssets = Resources.Load("colors") as TextAsset;
+        trackColorList = JsonUtility.FromJson<TrackColorList>(txtAssets.text);
     }
 
     private void CreatePoints()
@@ -89,11 +110,24 @@ public class LineScript : MonoBehaviour
 			lineRenderer.numCapVertices = 50;
 			lineRenderer.material = linesMaterial;
             float pT = Mathf.Sqrt(tracks.fTracks[i].fMomentum[0] * tracks.fTracks[i].fMomentum[0] + tracks.fTracks[i].fMomentum[1] * tracks.fTracks[i].fMomentum[2]);
-			Color color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.9f, 1f);
-            //Color color = new Color();
+            Color color = new Color();
+            if (tracks.fTracks[i].fPID == 0)
+            {
+                color = new Color(255, 0, 255);
+            }
+            else
+                foreach (TrackColor trackColor in trackColorList.colorMapping)
+                {
+                    if (trackColor.particleIDs.Contains(tracks.fTracks[i].fPID))
+                    {
+                        color = new Color(trackColor.color[0] / 255f, trackColor.color[1] / 255f, trackColor.color[2] / 255f);
+                        break;
+                    }
+                }
 			lineRenderer.material.SetColor("_Color", color);
 			lineRenderer.material.SetColor("_EmissionColor", color);
 			lineRenderer.generateLightingData = true;
+			lineRenderer.useWorldSpace=false;
             List<int> lengthList = new List<int>();
             lengthList.Add(this.tracks.fTracks[i].fPolyX.Count);
             lengthList.Add(this.tracks.fTracks[i].fPolyY.Count);
@@ -109,5 +143,13 @@ public class LineScript : MonoBehaviour
 
     // Update is called once per frame
 	void Update () {
-    }
+		if (Input.GetKeyDown (KeyCode.Space))
+			doublePositions = !doublePositions;
+		float step = speed * Time.deltaTime;
+		if (doublePositions)
+			transform.position = Vector3.MoveTowards(transform.position,newPosition,step);
+		else
+			transform.position =  Vector3.MoveTowards(transform.position,new Vector3(0,0,0),step);
+	}
+    
 }

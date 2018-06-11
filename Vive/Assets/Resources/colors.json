@@ -1,0 +1,69 @@
+{
+	"colorMapping": [
+		{
+			"type": "electron",
+			"color": [0, 0, 255],
+			"particleIDs": [11]
+		},
+		{
+			"type": "muon",
+			"color": [0, 255, 0],
+			"particleIDs": [13]
+		},
+		{
+			"type": "pion",
+			"color": [255, 0, 0],
+			"particleIDs": [211]
+		},
+		{
+			"type": "proton",
+			"color": [255, 153, 0],
+			"particleIDs": [2212]
+		},
+		{
+			"type": "deuteron",
+			"color": [255, 0, 0],
+			"particleIDs": [1000010020]
+		},
+		{
+			"type": "triton",
+			"color": [255, 153, 0],
+			"particleIDs": [1000010030]
+		},
+		{
+			"type": "he3",
+			"color": [255, 153, 0],
+			"particleIDs": [-1]
+		},
+		{
+			"type": "baryons",
+			"color": [0, 255, 0],
+			"particleIDs": [1]
+		},
+		{
+			"type": "alpha",
+			"color": [102, 102, 0],
+			"particleIDs": [1000020040]
+		},
+		{
+			"type": "photon",
+			"color": [255, 255, 255],
+			"particleIDs": [22]
+		},
+		{
+			"type": "pi0",
+			"color": [255, 0, 255],
+			"particleIDs": [-1]
+		},
+		{
+			"type": "neutron",
+			"color": [255, 0, 51],
+			"particleIDs": [2112]
+		},
+		{
+			"type": "kaon",
+			"color": [255, 153, 51],
+			"particleIDs": [321]
+		}
+	]
+}
