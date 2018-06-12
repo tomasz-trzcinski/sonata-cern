@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -57,15 +58,20 @@ public class LineScript : MonoBehaviour
     public Material linesMaterial;
     public TextAsset asset;
 	public Vector3 newPosition;
+    public int speedCollisionTime = 1;
     string[] pt;
     private GameObject[]  childGameObjects;
     private TracksList tracks;
     private TrackColorList trackColorList;
     private int points_amount;
     private int max_points;
+    public float momentum;
     float deltaTime;
 	private bool doublePositions= false;
 	private int speed = 1;
+    private Vector3[] linePositions;
+    private float collsionStartEvent;
+    private LineRenderer lineRenderer;
 	
     public string dataFile = "collision";
     string txtContents;
@@ -83,6 +89,12 @@ public class LineScript : MonoBehaviour
                 childGameObjects[i].AddComponent<LineRenderer>();
             };
             CreatePoints();
+        }
+        else if (gameObject.GetComponent<LineRenderer>().positionCount > 0)
+        {
+            lineRenderer = gameObject.GetComponent<LineRenderer>();
+            linePositions = new Vector3[lineRenderer.positionCount];
+            lineRenderer.GetPositions(linePositions);
         }
     }
 
@@ -106,6 +118,8 @@ public class LineScript : MonoBehaviour
         for (int i = 0; i < this.tracks.fTracks.Length; i++)
         {
             LineRenderer lineRenderer = childGameObjects[i].GetComponent<LineRenderer>();
+            List<float> fMomentum = this.tracks.fTracks[i].fMomentum;
+            childGameObjects[i].GetComponent<LineScript>().momentum=Mathf.Sqrt(fMomentum[0] * fMomentum[0] + fMomentum[1] * fMomentum[1]);
             lineRenderer.widthMultiplier = 0.06f;
 			lineRenderer.numCapVertices = 50;
 			lineRenderer.material = linesMaterial;
@@ -136,16 +150,40 @@ public class LineScript : MonoBehaviour
             lineRenderer.positionCount = minVal;
             for (int j = 0; j < minVal; j++)
             {
-                lineRenderer.SetPosition(j, new Vector3(this.tracks.fTracks[i].fPolyX[j] / 100, this.tracks.fTracks[i].fPolyY[j] / 100, this.tracks.fTracks[i].fPolyZ[j] / 100));
+                lineRenderer.SetPosition(j, new Vector3(this.tracks.fTracks[i].fPolyX[j] / 125, this.tracks.fTracks[i].fPolyY[j] / 125, this.tracks.fTracks[i].fPolyZ[j] / 125));
             }
         }
     }
 
+    void RestartCollision()
+    {
+        collsionStartEvent = Time.time;
+    }
+    void ToggleDoublePositions()
+    {
+        doublePositions = !doublePositions;
+    }
+
     // Update is called once per frame
-	void Update () {
-		if (Input.GetKeyDown (KeyCode.Space))
-			doublePositions = !doublePositions;
-		float step = speed * Time.deltaTime;
+    void Update () {
+        if (Input.GetKeyDown(KeyCode.Space))
+            ToggleDoublePositions();
+        float step = speed * Time.deltaTime;
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            RestartCollision();
+        }
+        int progress;
+        progress = Mathf.RoundToInt((Time.time - collsionStartEvent) * momentum * speedCollisionTime);
+        if (linePositions != null & momentum!= 0 & collsionStartEvent!= 0)
+            if (linePositions.Length > progress)
+                {
+            int display = progress % linePositions.Length;
+            Vector3[] displayedPositions = new Vector3[display];
+            Array.Copy(linePositions, displayedPositions, display);
+            lineRenderer.positionCount = display;
+            lineRenderer.SetPositions(displayedPositions);
+        }
 		if (doublePositions)
 			transform.position = Vector3.MoveTowards(transform.position,newPosition,step);
 		else

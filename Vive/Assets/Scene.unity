@@ -18545,7 +18545,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1752466258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18561,6 +18561,8 @@ MonoBehaviour:
   linesMaterial: {fileID: 2100000, guid: 00de3da52f11b7541bbe8a966318e227, type: 2}
   asset: {fileID: 0}
   newPosition: {x: 0, y: 0, z: 12}
+  speedCollisionTime: 50
+  momentum: 0
   dataFile: collision
 --- !u!65 &1752466259
 BoxCollider:
