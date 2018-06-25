@@ -82,10 +82,15 @@
     <Compile Include="Assets\Scripts\LaserScript.cs" />
     <Compile Include="Assets\Scripts\LineScript.cs" />
     <Compile Include="Assets\Scripts\MenuScript.cs" />
+    <Compile Include="Assets\Scripts\MoveCollisionButtonScript.cs" />
     <Compile Include="Assets\Scripts\MUONMaterialScript.cs" />
+    <Compile Include="Assets\Scripts\NextCollisonButtonScript.cs" />
+    <Compile Include="Assets\Scripts\StandardShaderUtils.cs" />
+    <Compile Include="Assets\Scripts\StartCollisonScript.cs" />
     <Compile Include="Assets\Scripts\ToggleBlowupDetectorScript.cs" />
     <Compile Include="Assets\Scripts\ToggleCollisonScript.cs" />
     <Compile Include="Assets\Scripts\ToggleDetectorScript.cs" />
+    <Compile Include="Assets\Scripts\ToggleTransparencyButtonScript.cs" />
     <Compile Include="Assets\Scripts\VRscript.cs" />
     <Compile Include="Assets\Scripts\VRUI.cs" />
     <Compile Include="Assets\SteamVR\Extras\SteamVR_GazeTracker.cs" />

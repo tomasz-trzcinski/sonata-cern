@@ -61,6 +61,8 @@ public class LineScript : MonoBehaviour
     public int speedCollisionTime = 1;
     string[] pt;
     private GameObject[]  childGameObjects;
+    private UnityEngine.Object[] textAssets;
+    private int collisionIndex = 0; 
     private TracksList tracks;
     private TrackColorList trackColorList;
     private int points_amount;
@@ -81,36 +83,50 @@ public class LineScript : MonoBehaviour
     {
         if (!gameObject.name.Contains("(Clone)"))
         {
+            textAssets = Resources.LoadAll("Collisions");
+            trackColorList = JsonUtility.FromJson<TrackColorList>((Resources.Load("colors") as TextAsset).text);
             LoadFile();
-            childGameObjects = new GameObject[this.tracks.fTracks.Length];
-            for (int i = 0; i < this.tracks.fTracks.Length; i++)
-            {
-                childGameObjects[i] = Instantiate(gameObject) as GameObject;
-                childGameObjects[i].AddComponent<LineRenderer>();
-            };
-            CreatePoints();
         }
         else if (gameObject.GetComponent<LineRenderer>().positionCount > 0)
         {
             lineRenderer = gameObject.GetComponent<LineRenderer>();
             linePositions = new Vector3[lineRenderer.positionCount];
             lineRenderer.GetPositions(linePositions);
+            lineRenderer.positionCount=0;
         }
     }
 
     void LoadFile()
     {
-        TextAsset txtAssets = Resources.Load("collision") as TextAsset;
-        this.tracks = JsonUtility.FromJson<TracksList>(txtAssets.text);
+        TextAsset textAsset = textAssets[collisionIndex] as TextAsset;
+        tracks = JsonUtility.FromJson<TracksList>(textAsset.text);
         points_amount = 0;
-        for (int i = 0; i < this.tracks.fTracks.Length; i++)
+        for (int i = 0; i < tracks.fTracks.Length; i++)
         {
-            points_amount += this.tracks.fTracks[i].fPolyX.Count;
+            points_amount += tracks.fTracks[i].fPolyX.Count;
             if (tracks.fTracks[i].fPolyX.Count > max_points)
                 max_points = tracks.fTracks[i].fPolyX.Count;
+        }
+        if (childGameObjects != null)
+            for (int i = 0; i < childGameObjects.Length; i++)
+                Destroy(childGameObjects[i]);
+        childGameObjects = new GameObject[tracks.fTracks.Length];
+        for (int i = 0; i < tracks.fTracks.Length; i++)
+        {
+            childGameObjects[i] = Instantiate(gameObject) as GameObject;
+            childGameObjects[i].AddComponent<LineRenderer>();
+            if (doublePositions)
+                childGameObjects[i].GetComponent<LineScript>().ToggleDoublePositions();
+            if (collsionStartEvent != 0)
+            {
+                childGameObjects[i].GetComponent<LineScript>().RestartCollision();
+            }
         };
-        txtAssets = Resources.Load("colors") as TextAsset;
-        trackColorList = JsonUtility.FromJson<TrackColorList>(txtAssets.text);
+        if (collisionIndex + 1 == textAssets.Length)
+            collisionIndex = 0;
+        else
+            collisionIndex++;
+        CreatePoints();
     }
 
     private void CreatePoints()
@@ -147,6 +163,10 @@ public class LineScript : MonoBehaviour
             lengthList.Add(this.tracks.fTracks[i].fPolyY.Count);
             lengthList.Add(this.tracks.fTracks[i].fPolyZ.Count);
             int minVal = lengthList.Min();
+            if (minVal > 80)
+            {
+                Debug.Log("NONE");
+            }
             lineRenderer.positionCount = minVal;
             for (int j = 0; j < minVal; j++)
             {
@@ -155,23 +175,28 @@ public class LineScript : MonoBehaviour
         }
     }
 
-    void RestartCollision()
+    public void RestartCollision()
     {
         collsionStartEvent = Time.time;
     }
-    void ToggleDoublePositions()
+    public void ToggleDoublePositions()
     {
         doublePositions = !doublePositions;
     }
 
     // Update is called once per frame
     void Update () {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.X))
             ToggleDoublePositions();
         float step = speed * Time.deltaTime;
         if (Input.GetKeyDown(KeyCode.Z))
         {
             RestartCollision();
+        }
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            if (!gameObject.name.Contains("(Clone)"))
+                LoadFile();
         }
         int progress;
         progress = Mathf.RoundToInt((Time.time - collsionStartEvent) * momentum * speedCollisionTime);

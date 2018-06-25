@@ -26,9 +26,8 @@ public class MenuScript : MonoBehaviour
         menuTransform = menu.transform;
 
     }
-    private void ShowMenu()
+    private void UpdateMenuPostion()
     {
-        menu.SetActive(true);
         menuTransform.position = trackedObj.transform.position;
         menuTransform.rotation = trackedObj.transform.rotation;
     }
@@ -39,10 +38,15 @@ public class MenuScript : MonoBehaviour
         if (Controller.GetPressDown(SteamVR_Controller.ButtonMask.ApplicationMenu))
         {
             showMenu = !showMenu;
-            if (!showMenu)
+            if (showMenu)
+            {
+                menu.SetActive(true);
+                UpdateMenuPostion();
+            }
+            else
                 menu.SetActive(false);
         }
         if (showMenu)
-            ShowMenu();
+            UpdateMenuPostion();
     }
 }
