@@ -15,8 +15,8 @@ public class ToggleCollisonScript : MonoBehaviour
     void TaskOnClick()
     {
         for(int i=0; i< renderers.Length; i++)
+            
             renderers[i].enabled = !renderers[i].enabled;
-        Debug.Log("You have clicked the button!");
     }
 
 	void Update(){

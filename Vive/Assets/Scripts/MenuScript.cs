@@ -37,16 +37,20 @@ public class MenuScript : MonoBehaviour
     {
         if (Controller.GetPressDown(SteamVR_Controller.ButtonMask.ApplicationMenu))
         {
-            showMenu = !showMenu;
-            if (showMenu)
+            showMenu = menu.activeInHierarchy;
+            if (!showMenu)
             {
+                foreach (GameObject menuObject in GameObject.FindGameObjectsWithTag("Menu"))
+                {
+                    menuObject.SetActive(false);
+                }
                 menu.SetActive(true);
                 UpdateMenuPostion();
             }
             else
                 menu.SetActive(false);
         }
-        if (showMenu)
+        if (!showMenu)
             UpdateMenuPostion();
     }
 }

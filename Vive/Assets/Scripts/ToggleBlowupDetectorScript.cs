@@ -14,7 +14,7 @@ public class ToggleBlowupDetectorScript : MonoBehaviour
     void TaskOnClick()
     {
 
-        detector.GetComponent<detectorScript>().ToggleSize();
+        detector.GetComponent<detectorScript>().DoublePositions();
     }
 
 }

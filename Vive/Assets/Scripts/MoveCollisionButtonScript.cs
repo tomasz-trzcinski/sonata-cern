@@ -12,9 +12,9 @@ public class MoveCollisionButtonScript : MonoBehaviour {
     }
     void TaskOnClick()
     {
-        GameObject[] collisionObjects = GameObject.FindGameObjectsWithTag("Collision");
-        foreach (GameObject collisionObject in collisionObjects){
-            collisionObject.GetComponent<LineScript>().ToggleDoublePositions();
+        LineScript[] lineScripts = GameObject.FindObjectsOfType<LineScript>();
+        foreach (LineScript lineScript in lineScripts){
+            lineScript.ToggleDoublePositions();
         }
     }
 

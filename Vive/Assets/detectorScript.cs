@@ -119,6 +119,9 @@ public class detectorScript : MonoBehaviour
         isTransparent = !isTransparent;
     }
 
+    public void DoublePositions() {
+        doublePositions = !doublePositions;
+    }
     // Update is called once per frame
     void Update()
     {

@@ -16,7 +16,7 @@ public class NextCollisonButtonScript : MonoBehaviour {
     }
     void TaskOnClick()
     {
-        lineScript.RestartCollision();
+        lineScript.LoadFile();
     }
 
     void Update()

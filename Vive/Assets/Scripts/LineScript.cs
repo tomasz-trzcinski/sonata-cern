@@ -96,7 +96,7 @@ public class LineScript : MonoBehaviour
         }
     }
 
-    void LoadFile()
+    public void LoadFile()
     {
         TextAsset textAsset = textAssets[collisionIndex] as TextAsset;
         tracks = JsonUtility.FromJson<TracksList>(textAsset.text);
